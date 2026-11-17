@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SCS 운전훈련 개념 미믹 v2.8</title>
+<style>
+:root{--navy:#142d3b;--dark:#254554;--ink:#203744;--muted:#607784;--cream:#f7f2e3;--bg:#eef2f3;--line:#dae3e7;--pipe:#385460;--hx:#326c89;--ok:#148064;--red:#bb4a65;--amber:#bd8737}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #3ca3cc;outline-offset:2px}button:disabled{opacity:.4;cursor:not-allowed}
+header{background:var(--navy);color:white;padding:17px 24px}.top{max-width:1630px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:21px;margin:2px 0;font-weight:850;letter-spacing:-.035em}.eyebrow{font-size:11px;font-weight:800;color:#83bed2;letter-spacing:.14em}.status{font-size:12px;color:#d9e9ec;border:1px solid #567381;border-radius:25px;padding:8px 11px}
+main{max-width:1630px;margin:auto;padding:16px 20px 30px}.warning{font-size:12px;line-height:1.7;border:1px solid #c7dce5;background:#eef9fd;border-radius:10px;padding:11px 13px;margin-bottom:13px;color:#345f72}.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}.bar label{font-size:12px;font-weight:800;color:#526b79}select,.pill{border:1px solid #cbd8de;border-radius:9px;background:#fff;color:#274756;padding:10px 11px;font-size:13px}.pill{font-weight:750}.pill.active{background:#24566c;color:white;border-color:#24566c}.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:13px}.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px;min-width:0}.kpi label{font-size:11px;color:#6b808b}.kpi strong{font-size:20px;display:block;white-space:nowrap;margin:4px 0;font-variant-numeric:tabular-nums}.kpi small{font-size:10px;color:#81929b}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;align-items:start;gap:13px}.panel{background:#fff;border:1px solid #dbe3e6;border-radius:13px;overflow:hidden;box-shadow:0 2px 8px #22364006}.panel h2{font-size:15px;margin:0}.panelheading{padding:13px 16px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}.tiny{font-size:11px;color:#778b97}.regions{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 12px}.regions button{border:1px solid #cfdce0;background:#f9fbfb;color:#3f6678;font-size:12px;padding:8px 10px;font-weight:760;border-radius:7px}.regions button.active{background:#dbeef5;border-color:#3e90b1;color:#1f546c}.mapbox{margin:0 12px 12px;border:1px solid #ddd2b9;border-radius:9px;background:var(--cream);overflow:hidden}.mapbox svg{width:100%;height:570px;display:block;touch-action:none;cursor:grab;user-select:none}.mapbox svg.dragging{cursor:grabbing}.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:0 13px 13px}.foot span{font-size:11px;color:#728692}.foot button{border:1px solid #cdd9de;background:white;border-radius:8px;padding:6px 10px;font-weight:850}.right{display:grid;gap:12px}.pad{padding:15px}.tag{background:#264957;color:#fff;border-radius:6px;padding:5px 8px;font-size:12px;font-weight:850}.title{font-size:17px;font-weight:820;margin:12px 0 7px}.descr{font-size:12px;color:#69808b;line-height:1.7}.metric{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}.mini{background:#f4f8f9;border:1px solid #e1e9ec;border-radius:8px;padding:10px}.mini small{font-size:11px;color:#6b8492}.mini b{display:block;font-size:16px;margin-top:5px}.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.actions button{border:1px solid #c3d5dc;background:#fff;border-radius:10px;padding:13px 7px;font-size:13px;font-weight:860;min-height:49px}.actions button:first-child{background:#fcebf0;color:#a53e60;border-color:#eec4ce}.actions button:last-child{background:#e6f7f0;color:#17775d;border-color:#bfe5d5}.side-note{font-size:11px;line-height:1.8;color:#6d8290;background:#f6f9fa;border-radius:8px;padding:11px;margin-top:12px}.hint{background:#faf8f2;border:1px solid #e9e1cc;border-radius:9px;padding:11px 13px;font-size:12px;line-height:1.7}.hint strong{display:block;margin-bottom:4px}.log{max-height:190px;min-height:100px;overflow:auto;font-size:11px;color:#536d7a}.entry{padding:7px 0;border-bottom:1px solid #e6edef}.log-btns{display:flex;gap:6px;margin-top:10px}.log-btns button{border:1px solid #ccdade;background:white;padding:7px 9px;border-radius:7px;font-size:11px;font-weight:750}.sources{margin-top:15px;border:1px solid var(--line);border-radius:12px;background:white;padding:15px 17px}.sources h2{font-size:15px;margin:0 0 10px}.sourcegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.sourcebox{border:1px solid #e0e8eb;border-radius:9px;padding:11px}.sourcebox b{font-size:12px}.sourcebox p{font-size:11px;color:#637b86;line-height:1.65;margin:6px 0 0}.sourcebox.emphasis{border-color:#ddcfaa;background:#fffaf0}.responsive-note{font-size:11px;color:#6f8692;margin-top:10px}
+.pipe{fill:none;stroke:var(--pipe);stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.pipe.rwt{stroke:#7193a0}.pipe.warm{stroke:#be9647;stroke-width:6;stroke-dasharray:12 9}.pipe.recir{stroke:#a58370;stroke-width:6;stroke-dasharray:11 9}.node{fill:var(--cream);stroke:#667e86;stroke-width:2}.valve{cursor:pointer}.valve:focus .hit,.valve:hover .hit,.valve.selected .hit{fill:#d8ecf5;stroke:#1388b3;stroke-width:4}.hit{fill:#fffdf4;stroke:#a4b4b6;stroke-width:2}.vsymbol{fill:#f0e5bf;stroke:#425e69;stroke-width:2.3}.symbol-pump{fill:#d6edf1;stroke:#427d8c;stroke-width:3}.vlabel{font-size:16px;font-weight:850;fill:#253e4a}.vsub{font-size:12px;fill:#68808d}.pipelabel{font-size:16px;fill:#2b5264;font-weight:850}.note{font-size:13px;fill:#68808a}.instrument{fill:#293f4b;stroke:#1b333b;stroke-width:2}.screen{fill:#20313a}.digit{font:800 23px monospace;fill:#78df9b}.sensor{fill:#fffaf0;stroke:#607a85;stroke-width:1.6}.sensorText{font-size:12px;font-weight:750;fill:#294f5e}.section{fill:none;stroke:#d9ccb0;stroke-width:1.5;stroke-dasharray:8 7}.lampopen{fill:#d45474}.lampclose{fill:#28a47e}.lampunknown{fill:#c4cfd0}.svg-click-label{font-size:12px;fill:#69818a}
+@media(max-width:1120px){.layout{grid-template-columns:1fr}.right{grid-template-columns:1fr 1fr}.mapbox svg{height:520px}}@media(max-width:720px){header{padding:13px 14px}h1{font-size:17px}main{padding:12px 9px 22px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{padding:9px}.kpi strong{font-size:18px}.layout,.right,.sourcegrid{grid-template-columns:1fr}.bar{gap:6px}.bar select{flex:1}.mapbox{margin:0 7px 8px}.mapbox svg{height:385px}.panelheading{padding:11px 12px}.regions{padding:0 7px 9px}.regions button{padding:7px 8px;font-size:11px}.sourcebox{padding:9px}.foot{padding:0 8px 9px}}
+
+/* v2.2: direct mimic control and touch gestures */
+.mapbox svg{touch-action:none;-webkit-user-select:none;user-select:none;overscroll-behavior:contain}
+.mapbox .valve{touch-action:none}
+.mapbox .valve:active .hit{stroke:#0d80a8;stroke-width:4}
+.touch-help{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#2c677f;background:#e6f3f8;border:1px solid #c8e3ee;border-radius:8px;padding:6px 9px;line-height:1.45}
+.mimic-modal[hidden]{display:none!important}
+.mimic-modal{position:fixed;z-index:10000;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(9,25,35,.52)}
+.dialog-open{overflow:hidden}
+.mimic-dialog{width:min(430px,100%);max-height:min(700px,calc(100dvh - 28px));overflow:auto;background:#fff;border-radius:18px;box-shadow:0 18px 54px rgba(9,25,35,.30);border:1px solid #cbdce2;padding:19px}
+.mimic-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mimic-dialog-head h3{font-size:19px;margin:4px 0 6px;letter-spacing:-.02em}
+.mimic-dialog-head .tag{display:inline-block}
+.mimic-close{border:1px solid #d2e0e4;border-radius:10px;background:#f6f9fa;color:#466171;min-height:40px;min-width:40px;font-weight:800;font-size:20px}
+.mimic-status{margin:14px 0;padding:12px 13px;background:#f3f8fa;border:1px solid #d9e9ed;border-radius:10px;line-height:1.6;font-size:13px}
+.mimic-status strong{font-size:16px;display:block}
+.mimic-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px}
+.mimic-actions button{min-height:58px;border-radius:10px;border:1px solid #d2dde2;background:#fff;font-size:14px;font-weight:850;touch-action:manipulation}
+.mimic-actions button:first-child{background:#fce9ef;color:#9c3557;border-color:#e7beca}
+.mimic-actions button:last-child{background:#e8f7ef;color:#146b51;border-color:#b6e1cc}
+.mimic-modal-note{font-size:11px;color:#627c87;line-height:1.65;margin:12px 0 0}
+@media(max-width:720px){.mimic-modal{padding:0;align-items:flex-end}.mimic-dialog{width:100%;max-height:84dvh;border-radius:20px 20px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom))}.mimic-actions button{min-height:62px}.touch-help{font-size:10px}}
+
+/* v2.7 가상 개도 시각화 */
+.jogbar{height:15px;border:1px solid #c0d3d9;border-radius:7px;overflow:hidden;background:#e8f0f2;margin:9px 0 5px}
+.jogfill{height:100%;background:linear-gradient(90deg,#277997,#4db7b1);border-radius:6px;transition:width .15s}
+.joglegend{display:flex;justify-content:space-between;font-size:10px;color:#607b89}
+</style>
+</head>
+<body>
+<header><div class="top"><div><div class="eyebrow">SCS · TRAINING CONCEPT</div><h1>정지냉각계통 운전훈련 미믹 v2.8</h1></div><div class="status">독립형 교육 시제품 · 실제 설비와 연결되지 않음</div></div></header>
+<main>
+<div class="bar"><label for="ic">계측 참고상태</label><select id="ic"><option value="start">I/S 이전 IC (관측 사진)</option><option value="running">SCS 운전 IC (관측 사진)</option></select><label for="phase">학습 주제</label><select id="phase"><option value="overview">전체 유로 이해</option><option value="boron">붕소균일화 운전</option><option value="warm">예열운전</option><option value="temp">냉각·가열률 제어</option></select><button class="pill" id="reset">선택 IC로 초기화</button></div>
+<div class="cards">
+<div class="kpi"><label>LPSI 01B 토출유량</label><strong id="flow">—</strong><small>L/min · 사진값</small></div>
+<div class="kpi"><label>SI-TR-352X</label><strong id="tx">—</strong><small>°C · HX 입구 측</small></div>
+<div class="kpi"><label>SI-TR-352Y</label><strong id="ty">—</strong><small>°C · 혼합 후 헤더</small></div>
+<div class="kpi"><label>SI-TI-303Y</label><strong id="hxout">—</strong><small>°C · HX 출구 측</small></div>
+<div class="kpi"><label>계기값 상태</label><strong style="font-size:14px" id="icstate">관측 IC</strong><small>밸브 조작값과 미연동</small></div>
+</div>
+<div class="layout">
+<section class="panel"><div class="panelheading"><h2>정지냉각 주요 유로</h2><span class="touch-help">손가락 이동 · 두 손가락 확대/축소 · 기기 직접 터치</span></div><div class="regions" id="regions"><button data-region="all" class="active">전체</button><button data-region="suction">흡입 · 펌프</button><button data-region="hx">열교환기 · 우회</button><button data-region="return">예열 · RCS 복귀</button></div><div class="mapbox"><svg id="svg" viewBox="0 0 1700 900" aria-label="SCS 계통 개념 미믹"></svg></div><div class="foot"><span>기기 터치·이동·두 손가락 확대/축소 · IC 계기값 고정 · JOG 개도는 가상값(±5%p/회)</span><div><button id="zoomIn">＋</button> <button id="zoomOut">－</button> <button id="zoomReset">전체 보기</button></div></div></section>
+<div class="right"><section class="panel"><div class="panelheading"><h2>기기 선택 및 조작</h2><span class="tiny" id="count"></span></div><div class="pad"><select id="devselect" aria-label="조작 기기 선택" style="width:100%"></select><div id="device"></div></div></section><section class="panel"><div class="panelheading"><h2>학습 주제 설명</h2></div><div class="pad"><div id="topic" class="hint"></div></div></section><section class="panel"><div class="panelheading"><h2>가상 조작 이력</h2><span class="tiny" id="logcount">0건</span></div><div class="pad"><div class="log" id="logs">아직 조작 없음</div><div class="log-btns"><button id="csv">CSV 저장</button><button id="clear">기록 지우기</button></div></div></section></div>
+</div>
+</main>
+
+<div id="mimicModal" class="mimic-modal" hidden>
+ <div class="mimic-dialog" role="dialog" aria-modal="true" aria-labelledby="mimicTitle" aria-describedby="mimicDescription">
+  <div class="mimic-dialog-head"><div><span class="tag" id="mimicTag">SI-000</span><h3 id="mimicTitle">기기 조작</h3></div><button id="mimicClose" class="mimic-close" aria-label="조작창 닫기">×</button></div>
+  <div class="mimic-status" id="mimicState">가상 조작 상태</div>
+  <div class="mimic-actions" id="mimicActions"></div>
+  <p class="mimic-modal-note" id="mimicDescription">교육용 가상 조작 · 계측값은 연동되지 않습니다.</p>
+ </div>
+</div>
+<script>
+'use strict';
+const devs=[
+{id:'SI-652',name:'SDC 고온관 측 흡입라인 격리밸브',type:'iso',x:270,y:250},
+{id:'SI-654',name:'SDC 흡입라인 격리밸브',type:'iso',x:390,y:250},
+{id:'SI-656',name:'SDC 펌프 흡입측 격리밸브',type:'iso',x:540,y:250},
+{id:'SI-692',name:'RWT 측 LPSI 흡입 격리밸브',type:'iso',x:350,y:540},
+{id:'SI-668',name:'LPSI 최소유량 재순환 격리밸브 (RWT 방향)',type:'iso',x:640,y:748},
+{id:'SI-690',name:'SCS 예열라인 격리밸브',type:'jog',x:1015,y:126},
+{id:'SI-306',name:'정지냉각열교환기 우회유량 조절밸브',type:'jog',x:1045,y:308},
+{id:'SI-694',name:'정지냉각열교환기 입구 격리밸브',type:'iso',x:941,y:564},
+{id:'SI-696',name:'정지냉각열교환기 출구 격리밸브',type:'iso',x:1220,y:564},
+{id:'SI-658',name:'정지냉각열교환기 출구유량 조절밸브',type:'jog',x:1326,y:564},
+{id:'SI-625',name:'안전주입 헤더 격리밸브 · RCS C/L 2B 측',type:'jog',x:1505,y:340},
+{id:'SI-615',name:'안전주입 헤더 격리밸브 · RCS C/L 2A 측',type:'jog',x:1505,y:502},
+{id:'SI-034',name:'LPSI Pump 01B (정지냉각펌프 겸용)',type:'pump',x:735,y:399}
+];
+const $=x=>document.getElementById(x),dv=Object.fromEntries(devs.map(d=>[d.id,d]));
+const percentJog=new Set(['SI-306','SI-658','SI-615','SI-625']);
+const JOG_STEP=5, JOG_BASE=50; // 절대 실제 개도나 밸브 속도가 아닌 학습용 임시 기준
+const snap={start:{flow:0,x:31.54,y:30.71,hx:23.3,states:{'SI-034':0,'SI-692':100,'SI-652':0,'SI-654':0,'SI-656':0,'SI-694':0,'SI-696':0}},running:{flow:16030,x:147.61,y:142.09,hx:29.0,states:{'SI-034':100,'SI-692':0,'SI-668':0,'SI-652':100,'SI-654':100,'SI-656':100,'SI-694':100,'SI-696':100}}};
+let st={ic:'start',phase:'overview',dev:{},jogCount:{},jogPercent:{},lastJog:{},selected:'SI-652',changed:false,logs:[],view:{x:0,y:0,w:1700,h:900},region:'all'};
+const topics={overview:['전체 유로','RCS H/L → LPSI 펌프 → HX/우회 → RCS C/L'],boron:['붕소균일화운전','순환유로와 관련 밸브의 위치를 확인합니다.'],warm:['예열운전','SI-690 예열라인은 SI-625 전단에서 분기됩니다.'],temp:['냉각·가열률 제어','SI-306(우회)과 SI-658(HX 출구)를 조작합니다.']};
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function norm(v){return v===null?'미확인':v===100?'OPEN':v===0?'CLOSE':v+'% (가상)';}
+function addLog(msg){st.logs.unshift({t:new Date().toLocaleTimeString('ko-KR',{hour12:false}),m:msg});st.logs=st.logs.slice(0,120);drawLog();}
+function setIC(k){st.ic=k;st.changed=false;st.dev={};st.jogCount={};st.lastJog={};st.jogPercent=Object.fromEntries([...percentJog].map(id=>[id,JOG_BASE]));devs.forEach(d=>st.dev[d.id]=Object.prototype.hasOwnProperty.call(snap[k].states,d.id)?snap[k].states[d.id]:null);$('flow').textContent=snap[k].flow.toLocaleString('ko-KR');$('tx').textContent=snap[k].x.toFixed(2);$('ty').textContent=snap[k].y.toFixed(2);$('hxout').textContent=snap[k].hx.toFixed(1);$('icstate').textContent='관측 IC';$('ic').value=k;draw();}
+function selectDevice(id,{recenter=true}={}){if(!dv[id])return;st.selected=id;$('devselect').value=id;drawDevice();drawSVG();if(recenter&&window.matchMedia('(max-width:720px)').matches){const d=dv[id],w=480,h=460;st.view={x:Math.max(0,Math.min(1700-w,d.x-w/2)),y:Math.max(0,Math.min(900-h,d.y-h/2)),w,h};updateView();}}
+function changeDev(cmd){
+ const d=dv[st.selected];if(!d)return;
+ const before=st.dev[d.id];
+ if(d.type==='jog'){
+   if(!st.jogCount[d.id])st.jogCount[d.id]={open:0,close:0};
+   st.jogCount[d.id][cmd]++;
+   st.lastJog[d.id]=cmd;
+   if(percentJog.has(d.id)){
+     const previous=st.jogPercent[d.id];
+     const next=Math.max(0,Math.min(100,previous+(cmd==='open'?JOG_STEP:-JOG_STEP)));
+     st.jogPercent[d.id]=next;
+     addLog(d.id+' JOG '+cmd.toUpperCase()+' : 가상 개도 '+previous+'% → '+next+'% (1회='+JOG_STEP+'%p, 실제 개도와 무관)');
+   }else{
+     addLog(d.id+' JOG '+cmd.toUpperCase()+' : 마지막 조작 기록 (개도 % 표시 없음)');
+   }
+ }else{
+   const after=cmd==='open'?100:0;st.dev[d.id]=after;
+   addLog(d.id+' '+(d.type==='pump'?(cmd==='open'?'START':'STOP'):(cmd==='open'?'OPEN':'CLOSE'))+' : '+(d.type==='pump'?(before===null?'미확인':before?'운전':'정지'):norm(before))+' → '+(d.type==='pump'?(after?'운전':'정지'):norm(after)));
+ }
+ st.changed=true;$('icstate').textContent='가상 조작 중';draw();if(!document.getElementById('mimicModal').hidden)updateModal();
+}
+function jogBarHTML(p){return `<div class="jogbar" role="progressbar" aria-label="교육용 가상 개도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><div class="jogfill" style="width:${p}%"></div></div><div class="joglegend"><span>0% CLOSE</span><span>100% OPEN</span></div>`;}
+function drawDevice(){
+ const d=dv[st.selected],v=st.dev[d.id],isj=d.type==='jog',hasPercent=percentJog.has(d.id);
+ const vtxt=hasPercent?st.jogPercent[d.id]+'% (교육용 가상)':d.id==='SI-690'?(st.lastJog[d.id]?'최근 JOG '+st.lastJog[d.id].toUpperCase():'마지막 JOG 입력 없음'):d.type==='pump'?(v===null?'미확인':v?'운전':'정지'):norm(v);
+ let body=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="tag">${d.id}</span><span style="font-size:11px;color:#78909b">${isj?'JOG 조절밸브':d.type==='pump'?'펌프':'격리밸브'}</span></div><div class="title">${esc(d.name)}</div><div class="metric"><div class="mini"><small>${hasPercent?'가상 개도':d.id==='SI-690'?'마지막 조작':'가상 조작 상태'}</small><b>${vtxt}</b></div><div class="mini"><small>실제 계측 연동</small><b>미구현</b></div></div>`;
+ if(hasPercent)body+=jogBarHTML(st.jogPercent[d.id]);
+ body+=`<div class="actions"><button data-cmd="open">${d.type==='pump'?'START':isj?'JOG OPEN':'OPEN'}</button><button data-cmd="close">${d.type==='pump'?'STOP':isj?'JOG CLOSE':'CLOSE'}</button></div>`;
+ if(isj){const j=st.jogCount[d.id]||{open:0,close:0};body+=`<div class="side-note">JOG OPEN ${j.open}회 · CLOSE ${j.close}회${hasPercent?' (가상 개도)':' (개도 % 미표시)'}</div>`;}
+ if(d.id==='SI-668')body+=`<div class="side-note" style="border-left:3px solid #bc7b53">SCS 운전 중 차단 · RWT 복귀유로</div>`;
+ $('device').innerHTML=body;
+}
+function drawLog(){$('logs').innerHTML=st.logs.length?st.logs.map(x=>`<div class="entry"><b>${x.t}</b> · ${esc(x.m)}</div>`).join(''):'아직 조작 없음';$('logcount').textContent=st.logs.length+'건';}
+function pipe(d,cl=''){return `<path d="${d}" class="pipe ${cl}"/>`}
+function text(x,y,s,cl='vlabel',anchor='middle'){return `<text x="${x}" y="${y}" class="${cl}" text-anchor="${anchor}">${esc(s)}</text>`}
+function valve(d){
+ const v=st.dev[d.id],sel=st.selected===d.id,hasPercent=percentJog.has(d.id);
+ let bar,sub;
+ if(hasPercent){
+   const pos=st.jogPercent[d.id];
+   bar=`<rect x="-36" y="22" rx="2" width="72" height="7" fill="#d5e3e7"/><rect x="-36" y="22" rx="2" width="${(pos*0.72).toFixed(1)}" height="7" fill="#2b9e9d"/>`;
+   sub=`JOG ${pos}% (가상)`;
+ }else if(d.id==='SI-690'){
+   const last=st.lastJog[d.id];
+   bar=`<rect x="-36" y="22" rx="2" width="72" height="7" fill="${last==='open'?'#d6a84b':last==='close'?'#7a91a8':'#c4cfd0'}"/>`;
+   sub=last?'최근 '+last.toUpperCase():'JOG (개도 미표시)';
+ }else{
+   bar=`<rect class="${v===100?'lampopen':v===0?'lampclose':'lampunknown'}" x="-36" y="22" rx="2" width="72" height="6"/>`;
+   sub=v===null?'상태 미확인':v===0?'CLOSE':v===100?'OPEN':'가상 조작';
+ }
+ return `<g class="valve ${sel?'selected':''}" data-id="${d.id}" role="button" tabindex="0" aria-label="${esc(d.id+' '+d.name)}" transform="translate(${d.x},${d.y})"><rect class="hit" x="-49" y="-41" width="98" height="82" rx="9"/><path class="vsymbol" d="M-26 -12 L0 0 L-26 12 Z M26 -12 L0 0 L26 12 Z"/>${bar}${text(0,-22,d.id,'vlabel')}${text(0,40,sub,'vsub')}</g>`;
+}
+function drawSVG(){
+ const pumpValue=st.dev['SI-034'];
+ const pumpRunning=pumpValue===100;
+ const pumpStopped=pumpValue===0;
+ const pumpFill=pumpRunning?'#f9dce4':pumpStopped?'#d7f3e9':'#e4ebee';
+ const pumpStroke=pumpRunning?'#ce4a77':pumpStopped?'#279576':'#81929a';
+ const pumpState=pumpRunning?'운전':pumpStopped?'정지':'미확인';
+ let h=`<rect width="1700" height="900" fill="#f7f2e3"/>
+ <rect x="25" y="32" width="1650" height="822" fill="none" stroke="#e0d4ba" stroke-width="2" rx="16"/>
+ ${text(48,75,'SCS 주요 기기 및 유로','pipelabel','start')}${text(48,97,'실제 미믹 + 사용자 단순화 개념도 대조 · 펌프 상태는 가상 조작에 따라 표시','note','start')}
+ <rect x="45" y="211" width="150" height="78" rx="35" fill="#dcecf0" stroke="#477589" stroke-width="2"/>${text(120,242,'RCS H/L','pipelabel')}${text(120,261,'고온관','vsub')}
+ <rect x="45" y="510" width="150" height="74" rx="10" fill="#e1eaf0" stroke="#648394" stroke-width="2"/>${text(120,544,'RWT','pipelabel')}${text(120,561,'저장탱크','vsub')}
+
+ ${pipe('M195 250 H660')} ${pipe('M660 250 V416 H656')} ${pipe('M195 540 H658 V426')} ${pipe('M672 416 H880')}
+ ${pipe('M880 416 V306 H1402 V416')} ${pipe('M880 416 V564 H1402 V416')}
+ ${pipe('M1402 416 H1412 V340 H1583')} ${pipe('M1412 416 V502 H1583')}
+ ${pipe('M463 250 V126 H1434 V340','warm')}
+ ${pipe('M808 416 V748 H120 V584','recir')}
+ <circle cx="463" cy="250" r="7" class="node"/><circle cx="880" cy="416" r="7" class="node"/><circle cx="1402" cy="416" r="7" class="node"/><circle cx="1412" cy="416" r="7" class="node"/><circle cx="1434" cy="340" r="7" fill="#be9647" stroke="#795921" stroke-width="2"/>
+ <!-- 확대된 RCS 저온관 블록: 분기별 출구 배관이 외곽선과 직접 만남 -->
+ <ellipse cx="1624" cy="422" rx="69" ry="170" fill="#dcecf0" stroke="#477589" stroke-width="3"/>
+ ${text(1624,311,'2B','vlabel')}${text(1624,418,'RCS','pipelabel')}${text(1624,440,'C/L','pipelabel')}${text(1624,534,'2A','vlabel')}
+ ${text(790,105,'SI-690 예열라인 · SI-625 전단 배관에서 분기','pipelabel')}
+ ${text(365,689,'SI-668: RWT 방향 재순환 / SCS 운전 중 차단','note')}
+ ${text(1033,243,'열교환기 우회유로','pipelabel')}${text(1037,677,'열교환기 통과유로','pipelabel')}
+ <circle cx="714" cy="416" r="58" fill="${pumpFill}" stroke="${pumpStroke}" stroke-width="5"/><path d="M685 384 L752 416 L685 448 Z" fill="${pumpStroke}"/>${text(715,496,'LPSI 01B','pipelabel')}${text(715,519,'SI-034 · SDC 펌프 겸용','vsub')}
+ <rect x="664" y="531" width="100" height="28" rx="6" fill="${pumpFill}" stroke="${pumpStroke}" stroke-width="1.5"/>${text(714,551,pumpState+' (가상)','vlabel')}
+ <rect x="664" y="566" width="46" height="9" rx="3" fill="${pumpRunning?'#e44c80':'#e3e6e7'}" stroke="#bdc3c6" stroke-width=".8"/><rect x="718" y="566" width="46" height="9" rx="3" fill="${pumpStopped?'#2db68f':'#e3e6e7'}" stroke="#bdc3c6" stroke-width=".8"/>
+ ${text(687,588,'START','vsub')}${text(741,588,'STOP','vsub')}
+ <rect x="1012" y="517" width="132" height="91" rx="12" fill="#e4eff0" stroke="#437d8e" stroke-width="3"/><path d="M1025 533 L1132 590 M1025 552 L1101 594 M1049 525 L1130 569" stroke="#5f9ead" stroke-width="3"/>${text(1077,507,'SDC HX 1B','pipelabel')}
+ <rect x="842" y="448" width="130" height="49" rx="9" class="sensor"/>${text(907,469,'TE-352X','sensorText')}${text(907,485,'HX 입구 측','vsub')}
+ <!-- TI-303Y: HX 출구 직후 배관의 계측점과 리더선 -->
+ <circle cx="1159" cy="564" r="5" fill="#3589a2" stroke="white" stroke-width="2"/>
+ <path d="M1159 564 V630 H1178" fill="none" stroke="#5b8b9e" stroke-width="2.5"/>
+ <rect x="1178" y="614" width="132" height="51" rx="9" class="sensor"/>${text(1244,634,'TI-303Y','sensorText')}${text(1244,652,'HX 출구 온도','vsub')}
+ <!-- TE-352Y: 두 냉각재 유로가 합류한 후 복귀 공통배관 -->
+ <circle cx="1406" cy="416" r="5" fill="#3589a2" stroke="white" stroke-width="2"/>
+ <path d="M1406 416 V454 H1396" fill="none" stroke="#5b8b9e" stroke-width="2.5"/>
+ <rect x="1252" y="441" width="144" height="58" rx="9" class="sensor"/>${text(1324,463,'TE-352Y','sensorText')}${text(1324,482,'혼합 후 헤더','vsub')}
+ <rect x="1390" y="694" width="210" height="81" rx="9" class="instrument"/><rect x="1402" y="709" width="186" height="34" rx="4" class="screen"/>${text(1495,732,st.ic==='running'?'16.03':'0.00','digit')}${text(1493,763,'FI-306A  ×1000 L/min','vsub')}
+
+ `;
+ devs.filter(d=>d.type!=='pump').forEach(d=>h+=valve(d));
+ h+=`<g class="valve ${st.selected==='SI-034'?'selected':''}" data-id="SI-034" role="button" tabindex="0" aria-label="SI-034 LPSI 펌프"><rect x="655" y="356" width="116" height="126" class="hit" fill="transparent" rx="14" opacity="0"/></g>`;
+ $('svg').innerHTML=h;updateView();}
+function draw(){drawDevice();drawSVG();}
+function drawTopic(){let t=topics[st.phase];$('topic').innerHTML=`<strong>${t[0]}</strong>${t[1]}`;$('phase').value=st.phase;}
+const regions={all:{x:0,y:0,w:1700,h:900},suction:{x:0,y:200,w:950,h:610},hx:{x:770,y:200,w:825,h:620},return:{x:830,y:60,w:870,h:670}};
+const mobile={all:regions.all,suction:{x:30,y:190,w:880,h:680},hx:{x:800,y:180,w:800,h:670},return:{x:830,y:70,w:870,h:700}};
+function updateView(){let v=st.view;$('svg').setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);}
+function region(k){st.region=k;st.view={...((window.matchMedia('(max-width:720px)').matches)?mobile:regions)[k]};updateView();document.querySelectorAll('#regions button').forEach(b=>b.classList.toggle('active',b.dataset.region===k));}
+function zoom(f){const v=st.view,cx=v.x+v.w/2,cy=v.y+v.h/2,w=Math.max(280,Math.min(1700,v.w*f)),h=Math.max(180,Math.min(900,v.h*f));st.view={x:Math.max(0,Math.min(1700-w,cx-w/2)),y:Math.max(0,Math.min(900-h,cy-h/2)),w,h};updateView();}
+function download(){const data=[['시각','동작'],...st.logs.slice().reverse().map(r=>[r.t,r.m])].map(r=>r.map(v=>'"'+v.replaceAll('"','""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+data],{type:'text/csv;charset=utf-8'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SCS_v2_8_가상조작.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);}
+$('devselect').innerHTML=devs.map(d=>`<option value="${d.id}">${d.id} · ${esc(d.name)}</option>`).join('');$('count').textContent=devs.length+'개 기기';$('devselect').value=st.selected;
+$('devselect').onchange=e=>selectDevice(e.target.value);$('device').onclick=e=>{let b=e.target.closest('[data-cmd]');if(b)changeDev(b.dataset.cmd);};
+function updateModal(){
+ const d=dv[st.selected],v=st.dev[d.id],j=st.jogCount[d.id]||{open:0,close:0},hasPercent=percentJog.has(d.id);
+ $('mimicTag').textContent=d.id;$('mimicTitle').textContent=d.name;
+ const status=hasPercent?st.jogPercent[d.id]+'% (교육용 가상)':d.id==='SI-690'?(st.lastJog[d.id]?'최근 JOG '+st.lastJog[d.id].toUpperCase():'마지막 JOG 입력 없음'):d.type==='pump'?(v===null?'상태 미확인':v?'운전 상태(가상)':'정지 상태(가상)'):norm(v);
+ $('mimicState').innerHTML=`<small>${hasPercent?'가상 개도':'현재 조작 상태'}</small><strong>${esc(status)}</strong>`+(hasPercent?jogBarHTML(st.jogPercent[d.id]):'')+(d.type==='jog'?`<small>JOG OPEN ${j.open}회 / JOG CLOSE ${j.close}회</small>`:'');
+ $('mimicActions').innerHTML=`<button type="button" data-modal-cmd="open">${d.type==='pump'?'START':d.type==='jog'?'JOG OPEN':'OPEN'}</button><button type="button" data-modal-cmd="close">${d.type==='pump'?'STOP':d.type==='jog'?'JOG CLOSE':'CLOSE'}</button>`;
+ $('mimicDescription').textContent=hasPercent?'가상 개도: 50% 시작 · 클릭당 ±5%p':d.id==='SI-690'?'개도 % 미표시 · 마지막 JOG 명령만 기록':'교육용 가상 조작 · 실제 계측값은 연동되지 않음';
+}
+let returnFocus=null;
+function openModal(id){
+ selectDevice(id,{recenter:false});returnFocus=document.activeElement;updateModal();$('mimicModal').hidden=false;document.body.classList.add('dialog-open');$('mimicClose').focus({preventScroll:true});
+}
+function closeModal(){
+ $('mimicModal').hidden=true;document.body.classList.remove('dialog-open');
+ if(returnFocus&&returnFocus.isConnected&&typeof returnFocus.focus==='function')returnFocus.focus({preventScroll:true});
+}
+$('mimicClose').onclick=closeModal;
+$('mimicModal').addEventListener('click',e=>{if(e.target===$('mimicModal'))closeModal();});
+$('mimicActions').addEventListener('click',e=>{const b=e.target.closest('[data-modal-cmd]');if(b)changeDev(b.dataset.modalCmd);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('mimicModal').hidden){e.preventDefault();closeModal();}else if(e.key==='Tab'&&!$('mimicModal').hidden){const all=[...$('mimicModal').querySelectorAll('button')];const first=all[0],last=all[all.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+let suppressTapUntil=0;
+$('svg').addEventListener('click',e=>{if(Date.now()<suppressTapUntil)return;let g=e.target.closest('[data-id]');if(g)openModal(g.dataset.id);});
+$('svg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){let g=e.target.closest('[data-id]');if(g){e.preventDefault();openModal(g.dataset.id);}}});
+$('ic').onchange=e=>{setIC(e.target.value);addLog('관측 IC 전환: '+(st.ic==='start'?'I/S 이전':'운전 중'));};$('phase').onchange=e=>{st.phase=e.target.value;drawTopic();};$('reset').onclick=()=>{setIC(st.ic);addLog('선택 IC로 가상 상태 초기화');};
+$('regions').onclick=e=>{let b=e.target.closest('[data-region]');if(b)region(b.dataset.region);};$('zoomReset').onclick=()=>region('all');$('zoomIn').onclick=()=>zoom(.8);$('zoomOut').onclick=()=>zoom(1.25);
+$('csv').onclick=download;$('clear').onclick=()=>{st.logs=[];drawLog();};
+// Pointer Events: single finger drag / two-finger pinch.  Valve taps are not mistaken for drags.
+const svg=$('svg'),activePointers=new Map();let gesture=null;
+function limitView(x,y,w,h){return {x:Math.max(0,Math.min(1700-w,x)),y:Math.max(0,Math.min(900-h,y)),w,h};}
+function worldAt(clientX,clientY,view){
+ const r=svg.getBoundingClientRect(),scale=Math.min(r.width/view.w,r.height/view.h);
+ const padX=(r.width-view.w*scale)/2,padY=(r.height-view.h*scale)/2;
+ return {x:view.x+(clientX-r.left-padX)/scale,y:view.y+(clientY-r.top-padY)/scale};
+}
+function viewForAnchor(base,factor,world,clientX,clientY){
+ const minFactor=Math.max(280/base.w,180/base.h),maxFactor=Math.min(1700/base.w,900/base.h);
+ const f=Math.max(minFactor,Math.min(maxFactor,factor));
+ const w=base.w*f,h=base.h*f,r=svg.getBoundingClientRect();
+ const scale=Math.min(r.width/w,r.height/h),padX=(r.width-w*scale)/2,padY=(r.height-h*scale)/2;
+ return limitView(world.x-(clientX-r.left-padX)/scale,world.y-(clientY-r.top-padY)/scale,w,h);
+}
+function beginPinch(){
+ if(activePointers.size<2)return;const [a,b]=[...activePointers.values()];
+ const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+ gesture={type:'pinch',startDistance:Math.max(8,Math.hypot(a.x-b.x,a.y-b.y)),view:{...st.view},world:worldAt(mx,my,st.view)};
+ suppressTapUntil=Date.now()+700;svg.classList.add('dragging');
+}
+svg.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(activePointers.size===1){gesture={type:'pending',id:e.pointerId,sx:e.clientX,sy:e.clientY,view:{...st.view}};}
+ else if(activePointers.size===2){beginPinch();}
+ if(!e.target.closest('[data-id]')||activePointers.size>=2){try{svg.setPointerCapture(e.pointerId);}catch(_){}}
+});
+svg.addEventListener('pointermove',e=>{
+ if(!activePointers.has(e.pointerId))return;
+ activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(activePointers.size>=2){
+  if(!gesture||gesture.type!=='pinch')beginPinch();
+  const [a,b]=[...activePointers.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  const dist=Math.max(8,Math.hypot(a.x-b.x,a.y-b.y));
+  st.view=viewForAnchor(gesture.view,gesture.startDistance/dist,gesture.world,mx,my);updateView();
+  suppressTapUntil=Date.now()+700;return;
+ }
+ if(!gesture||gesture.id!==e.pointerId)return;
+ const dx=e.clientX-gesture.sx,dy=e.clientY-gesture.sy;
+ if(gesture.type==='pending'&&Math.hypot(dx,dy)>9){
+  gesture.type='pan';svg.classList.add('dragging');try{svg.setPointerCapture(e.pointerId);}catch(_){}
+ }
+ if(gesture.type==='pan'){
+  const r=svg.getBoundingClientRect(),v=gesture.view,scale=Math.min(r.width/v.w,r.height/v.h);
+  st.view=limitView(v.x-dx/scale,v.y-dy/scale,v.w,v.h);updateView();suppressTapUntil=Date.now()+450;
+ }
+});
+function pointerEnd(e){
+ activePointers.delete(e.pointerId);
+ if(svg.hasPointerCapture(e.pointerId)){try{svg.releasePointerCapture(e.pointerId);}catch(_){}}
+ if(gesture&&gesture.type==='pinch')suppressTapUntil=Date.now()+550;
+ if(activePointers.size>=2)beginPinch();
+ else if(activePointers.size===1){const [id,a]=[...activePointers.entries()][0];gesture={type:'pending',id,sx:a.x,sy:a.y,view:{...st.view}};}
+ else{gesture=null;svg.classList.remove('dragging');}
+}
+svg.addEventListener('pointerup',pointerEnd);svg.addEventListener('pointercancel',pointerEnd);
+svg.addEventListener('wheel',e=>{
+ if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();
+ const base={...st.view},anchor=worldAt(e.clientX,e.clientY,base);
+ st.view=viewForAnchor(base,Math.exp(e.deltaY*.002),anchor,e.clientX,e.clientY);updateView();
+},{passive:false});
+setIC('start');drawTopic();drawLog();region(window.matchMedia('(max-width:720px)').matches?'suction':'all');
+</script></body></html>
