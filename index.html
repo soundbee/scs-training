@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SCS 운전훈련 개념 미믹 v3.9</title>
+<title>SCS 운전훈련 개념 미믹 v3.10</title>
 <style>
 :root{--navy:#142d3b;--dark:#254554;--ink:#203744;--muted:#607784;--cream:#f7f2e3;--bg:#eef2f3;--line:#dae3e7;--pipe:#385460;--hx:#326c89;--ok:#148064;--red:#bb4a65;--amber:#bd8737}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #3ca3cc;outline-offset:2px}button:disabled{opacity:.4;cursor:not-allowed}
@@ -83,12 +83,15 @@ main{max-width:1630px;margin:auto;padding:16px 20px 30px}.warning{font-size:12px
 .ui-input-note{font-size:11px;line-height:1.6;color:#526a76;margin:9px 0 0;padding:8px 10px;background:#f5f8fa;border:1px solid #dbe4e8;border-radius:8px;min-height:36px}
 [data-cmd]:active,[data-modal-cmd]:active{outline:2px solid #32708c;outline-offset:2px}
 [data-cmd]:focus-visible,[data-modal-cmd]:focus-visible{outline:2px solid #32708c;outline-offset:2px}
+
+.ic-review{margin:8px 0;padding:10px 12px;border:1px solid #b7c6ce;border-radius:8px;background:#f5f8fa;color:#253b49;font-size:13px;line-height:1.6}.ic-review strong{display:block}.ic-review button{margin-top:7px}.demo-track{position:relative;overflow:hidden;height:12px;background:#dce5e9;border-radius:8px;margin:8px 0}.demo-track.playing::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 20px,#5086aa 20px 32px,transparent 32px 48px);animation:demo-flow 1s linear infinite}@keyframes demo-flow{from{transform:translateX(-48px)}to{transform:translateX(0)}}@media(prefers-reduced-motion:reduce){.demo-track.playing::after{animation:none}}
 </style>
 </head>
 <body>
-<header><div class="top"><div><div class="eyebrow">SCS · TRAINING CONCEPT</div><h1>정지냉각계통 운전훈련 미믹 v3.9</h1></div><div class="status">교육용 근사모델 · 실제 운전 예측 불가</div></div></header>
+<header><div class="top"><div><div class="eyebrow">SCS · TRAINING CONCEPT</div><h1>정지냉각계통 운전훈련 미믹 v3.10</h1></div><div class="status">교육용 근사모델 · 실제 운전 예측 불가</div></div></header>
 <main>
 <div class="bar"><label for="phase">훈련 상황</label><select id="phase"><option value="overview">전체 유로 이해 · I/S 전</option><option value="boron">붕소균일화 운전</option><option value="warm">예열운전</option><option value="temp">냉각·가열률 제어 · SCS 운전 중</option></select><span class="ic-chip" id="icdesc" role="status" aria-live="polite">기준 IC 자동 적용</span><button class="pill" id="reset">현재 상황 초기화</button></div>
+<div class="ic-review" aria-live="polite"><strong id="icReviewTitle">IC 적용 상태</strong><span id="icReviewText"></span></div>
 <div class="cards">
 <div class="kpi"><label>LPSI 01B 토출유량</label><strong id="flow">—</strong><small id="flowState">L/min · IC 관측값</small></div>
 <div class="kpi"><label>SI-TR-352X</label><strong id="tx">—</strong><small id="txLabel">°C · HX 입구 측</small></div>
@@ -98,7 +101,7 @@ main{max-width:1630px;margin:auto;padding:16px 20px 30px}.warning{font-size:12px
 <div class="simcontrols" id="simcontrols" hidden><span class="simclock" id="simclock">가상 경과 00:00</span><span class="simstate" id="icstate">가상 시뮬레이션</span><button class="simprimary" id="simtoggle" type="button">Ⅱ 일시정지</button><button id="simstep" type="button">＋1분 진행</button><span class="simlegend">모형 속도 ×12 · 검증 전 교육용 수치</span></div>
 <div class="layout">
 <section class="panel"><div class="panelheading"><h2>정지냉각 주요 유로</h2><span class="touch-help">손가락 이동 · 두 손가락 확대/축소 · 기기 직접 터치</span></div><div class="regions" id="regions"><button data-region="all" class="active">전체</button><button data-region="suction">흡입 · 펌프</button><button data-region="hx">열교환기 · 우회</button><button data-region="return">예열 · RCS 복귀</button></div><div class="mapbox"><svg id="svg" viewBox="0 0 1700 900" aria-label="SCS 계통 개념 미믹"></svg></div><div class="foot"><span>미믹 터치·확대/이동 · 기존 가상 모델은 유효 범위에서만 표시 · 예열 응답 모델 미구현</span><div><button id="zoomIn">＋</button> <button id="zoomOut">－</button> <button id="zoomReset">전체 보기</button></div></div></section>
-<div class="right"><section class="panel"><div class="panelheading"><h2>기기 선택 및 조작</h2><span class="tiny" id="count"></span></div><div class="pad"><select id="devselect" aria-label="조작 기기 선택" style="width:100%"></select><div id="device"></div><div class="ui-input-note" id="inputStatus" role="status" aria-live="polite">입력 점검: 대기</div></div></section><section class="panel"><div class="panelheading"><h2>현재 훈련 상황</h2></div><div class="pad"><div id="topic" class="hint"></div></div></section><section class="panel trendpanel" id="trendpanel" hidden><div class="panelheading"><h2>RCS 온도 추세</h2><span class="tiny">가상 분 단위 · 근사모델</span></div><div class="pad"><canvas id="trend" width="600" height="300" aria-label="RCS 온도 변화 추세"></canvas><div class="trendlegend" id="trendlegend"><span><i class="legenddot" style="background:#ce5675"></i>RCS 온도</span><span><i class="legenddot" style="background:#308aa7"></i>합류 후 온도</span></div></div></section><section class="panel"><div class="panelheading"><h2>가상 조작 이력</h2><span class="tiny" id="logcount">0건</span></div><div class="pad"><div class="log" id="logs">아직 조작 없음</div><div class="log-btns"><button id="csv">CSV 저장</button><button id="clear">기록 지우기</button></div></div></section></div>
+<div class="right"><section class="panel"><div class="panelheading"><h2>기기 선택 및 조작</h2><span class="tiny" id="count"></span></div><div class="pad"><select id="devselect" aria-label="조작 기기 선택" style="width:100%"></select><div id="device"></div><div class="ui-input-note" id="inputStatus" role="status" aria-live="polite">입력 점검: 대기</div></div></section><section class="panel"><div class="panelheading"><h2>현재 훈련 상황</h2></div><div class="pad"><div id="topic" class="hint"></div><div class="ic-review"><strong>애니메이션 표시 점검 (독립 예제)</strong><span>아래는 화면 효과만 확인하는 일반 예제입니다. 미믹의 기기 상태, 실제 유로 및 유량과 무관합니다.</span><div class="demo-track" id="demoTrack" aria-hidden="true"></div><button type="button" id="demoToggle" aria-pressed="false">표시 효과 재생</button></div></div></section><section class="panel trendpanel" id="trendpanel" hidden><div class="panelheading"><h2>RCS 온도 추세</h2><span class="tiny">가상 분 단위 · 근사모델</span></div><div class="pad"><canvas id="trend" width="600" height="300" aria-label="RCS 온도 변화 추세"></canvas><div class="trendlegend" id="trendlegend"><span><i class="legenddot" style="background:#ce5675"></i>RCS 온도</span><span><i class="legenddot" style="background:#308aa7"></i>합류 후 온도</span></div></div></section><section class="panel"><div class="panelheading"><h2>가상 조작 이력</h2><span class="tiny" id="logcount">0건</span></div><div class="pad"><div class="log" id="logs">아직 조작 없음</div><div class="log-btns"><button id="csv">CSV 저장</button><button id="clear">기록 지우기</button></div></div></section></div>
 </div>
 </main>
 
@@ -413,11 +416,19 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('mimicModal').hi
 let suppressTapUntil=0;
 $('svg').addEventListener('click',e=>{if(Date.now()<suppressTapUntil)return;let g=e.target.closest('[data-id]');if(g)openModal(g.dataset.id);});
 $('svg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){let g=e.target.closest('[data-id]');if(g){e.preventDefault();openModal(g.dataset.id);}}});
+// UI-only provenance and reset status. Does not alter any valve preset or calculation.
+const icReviewLabels={overview:'기존 기본 화면 상태',boron:'기존 기본 화면 상태 준용 · 독립 IC 미검증',warm:'기존 기본 화면 상태 준용 · 예열 독립 IC 미검증',temp:'기존 관측 화면 상태 · 응답 모델 미검증'};
+function updateICReview(){
+ $('icReviewTitle').textContent=topics[st.phase][0]+' · 초기 상태 정보';
+ $('icReviewText').textContent=icReviewLabels[st.phase]+' / 현재 상황 초기화로 가상 조작 상태 복원 가능. 실제 절차서 배열 검증 아님.';
+}
+function setDemo(active){$('demoTrack').classList.toggle('playing',active);$('demoToggle').setAttribute('aria-pressed',String(active));$('demoToggle').textContent=active?'표시 효과 정지':'표시 효과 재생';}
+$('demoToggle').onclick=()=>setDemo($('demoToggle').getAttribute('aria-pressed')!=='true');
 function activateScenario(key,{initial=false}={}){
  const preset=scenarios[key];if(!preset)return;
  if(!initial&&st.changed&&!window.confirm('훈련 상황을 바꾸면 현재 가상 조작 상태가 초기화됩니다. 변경할까요?')){$('phase').value=st.phase;return;}
  if(!$('mimicModal').hidden)closeModal();resetInputDiagnostic();
- stopSim();st.phase=key;st.selected=preset.selected;$('devselect').value=st.selected;setIC(preset.ic);drawTopic();
+ stopSim();setDemo(false);st.phase=key;st.selected=preset.selected;$('devselect').value=st.selected;setIC(preset.ic);drawTopic();updateICReview();
  startSim();$('simcontrols').hidden=key!=='temp';$('trendpanel').hidden=!['warm','temp'].includes(key);draw();region(preset.region);addLog((initial?'상황 초기화: ':'상황 선택: ')+topics[key][0]+' / '+preset.desc);
 }
 $('simtoggle').onclick=()=>{if(!sim.active)return;sim.paused=!sim.paused;$('simtoggle').textContent=sim.paused?'▶ 재개':'Ⅱ 일시정지';sim.lastTime=performance.now();updateSimValues();};
