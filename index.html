@@ -89,13 +89,18 @@ main{max-width:1630px;margin:auto;padding:16px 20px 30px}.warning{font-size:12px
 
 <style>
 [hidden]{display:none!important}.modebar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.modebar button[aria-pressed=true]{background:#213c4c;color:white}.generic{max-width:1100px;margin:auto}.generic .notice{padding:12px;border:1px solid #c4d1d7;border-radius:8px;background:#f1f5f7;line-height:1.6}.generic .gcontrols{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}.generic .gcontrols button,.generic select{min-height:40px}.generic svg{width:100%;height:auto;display:block;background:#f7fafb;border-radius:8px}.generic .gpipe{stroke:#b7c6ce;stroke-width:13;fill:none;stroke-linecap:round;stroke-linejoin:round}.generic .gstream{stroke:#147da0;stroke-width:5;stroke-dasharray:9 13;fill:none;opacity:0;stroke-linecap:round}.generic .gstream.on{opacity:1;animation:gmove .85s linear infinite}@keyframes gmove{to{stroke-dashoffset:-44}}.generic .glabel{font:16px sans-serif;fill:#203644}.generic .gsmall{font:13px sans-serif;fill:#506674}.generic .gcard{background:white;border:1px solid #d4dfe4;border-radius:8px;padding:14px;margin:12px 0}.generic .gvalue{font-size:32px;font-weight:bold;font-variant-numeric:tabular-nums}.generic .gstatus{font-size:14px;color:#334e5e;line-height:1.6}@media(prefers-reduced-motion:reduce){.generic .gstream.on{animation:none}}
+
+.display-test-banner{padding:10px 12px;margin:8px 0;border:2px solid #a66b15;background:#fff3d7;color:#704600;font-weight:700;border-radius:8px}
+.flow-overlay.display-test-overlay{stroke:#c28b30;stroke-dasharray:5 13;animation:display-test-pulse .9s ease-in-out infinite alternate}
+@keyframes display-test-pulse{from{opacity:.18}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.flow-overlay.display-test-overlay{animation:none;opacity:1}}
 </style></head>
 <body>
-<header><div class="top"><div><div class="eyebrow">SCS · TRAINING CONCEPT</div><h1>정지냉각계통 UI 검토 v3.11</h1></div><div class="status">교육용 근사모델 · 실제 운전 예측 불가</div></div></header>
+<header><div class="top"><div><div class="eyebrow">SCS · TRAINING CONCEPT</div><h1>정지냉각계통 UI 검토 v3.13</h1></div><div class="status">교육용 근사모델 · 실제 운전 예측 불가</div></div></header>
 <main><div class="modebar" aria-label="화면 선택"><button type="button" id="plantMode" aria-pressed="true">기존 SCS 미믹</button><button type="button" id="genericMode" aria-pressed="false">일반 배관 · 공통 응답 모형</button></div><div id="plantPanel">
 <div class="bar"><label for="phase">훈련 상황</label><select id="phase"><option value="overview">전체 유로 이해 · I/S 전</option><option value="boron">붕소균일화 운전</option><option value="warm">예열운전</option><option value="temp">냉각·가열률 제어 · SCS 운전 중</option></select><span class="ic-chip" id="icdesc" role="status" aria-live="polite">기준 IC 자동 적용</span><button class="pill" id="reset">현재 상황 초기화</button></div>
 <div class="ic-review" aria-live="polite"><strong id="icReviewTitle">IC 적용 상태</strong><span id="icReviewText"></span></div>
-<div class="cards">
+<div class="ic-review" id="modelConnector"><strong>미믹 응답 데이터 연결</strong><span id="connectorStatus" role="status" aria-live="polite">기존 가상 모형 · 미지원 운전 응답은 미산정</span><div><button type="button" id="connectModel">외부 응답 모드</button> <button type="button" id="legacyModel">기존 모형</button> <label for="modelFile">응답 JSON 불러오기</label> <input type="file" id="modelFile" accept=".json,application/json" disabled></div><small id="modelRevision"></small><div><button type="button" id="displayTest" aria-pressed="false">미믹 표시 시험 시작</button></div><small>숫자 및 전체 배관 점멸 표시 점검용 · 실제 유로 또는 유량과 무관합니다.</small></div><div id="displayTestBanner" class="display-test-banner" role="status" hidden>표시 시험 중 — 시험 숫자와 전체 배관 점멸은 실제 유량·유로가 아닙니다. 기기 조작 또는 IC 변경 시 종료됩니다.</div><div class="cards">
 <div class="kpi"><label>LPSI 01B 토출유량</label><strong id="flow">—</strong><small id="flowState">L/min · IC 관측값</small></div>
 <div class="kpi"><label>SI-TR-352X</label><strong id="tx">—</strong><small id="txLabel">°C · HX 입구 측</small></div>
 <div class="kpi"><label>SI-TR-352Y</label><strong id="ty">—</strong><small id="tyLabel">°C · 혼합 후 헤더</small></div>
@@ -196,10 +201,13 @@ function stopSim(){sim.active=false;sim.paused=true;$('simtoggle').textContent='
 function pushHistory(){if(sim.unsupported)return;sim.history.push({t:sim.t,rcs:sim.rcs,mix:sim.mix});if(sim.history.length>240)sim.history.shift();}
 function responseReadoutHTML(){
  if(!sim.active)return '';
+ if(displayTestActive)return '<div class="response-readout"><div><small>표시 시험</small><strong>8888</strong><small>시험 숫자 · 유량 아님</small></div></div>';
+ if(externalMode)return '<div class="response-readout"><div><small>LPSI 01B 토출유량</small><strong>'+flowDisplay()+'</strong><small>L/min</small></div></div><div class="response-caption">'+(externalFrame?'외부 입력 데이터 · 별도 검증 필요':'외부 응답 대기')+'</div>';
  return '<div class="response-readout"><div><small>LPSI 01B 토출유량</small><strong>'+flowDisplay()+'</strong><small>L/min</small></div></div><div class="response-caption">'+(sim.unsupported?(st.phase==='warm'?'예열 응답 모델 미구현 · 미산정':st.si690Unvalidated?'SI-690 응답 모델 미검증 · 미산정':'기존 가상 모델의 범위 밖 · 미산정'):'교육용 가상 계산값 · 실측 보정 아님')+'</div>';
 }
-function flowDisplay(){return sim.unsupported?'—':Math.round(sim.flow).toLocaleString('ko-KR');}
-function flowDisplaySVG(){return sim.unsupported?'—':(sim.flow/1000).toFixed(2);}
+function flowDisplay(){return externalMode?(externalFrame?Math.round(externalFrame.flow).toLocaleString('ko-KR'):'—'):sim.unsupported?'—':Math.round(sim.flow).toLocaleString('ko-KR');}
+function flowDisplaySVG(){return externalMode?(externalFrame?(externalFrame.flow/1000).toFixed(2):'—'):sim.unsupported?'—':(sim.flow/1000).toFixed(2);}
+
 function refreshReadouts(){
  for(const id of ['deviceReadout','modalReadout']){const el=$(id);if(!el)continue;const next=responseReadoutHTML();if(el.innerHTML!==next)el.innerHTML=next;}
 }
@@ -226,9 +234,10 @@ function updateSimValues(reset=false){
  refreshReadouts();
  $('simtoggle').disabled=sim.unsupported; $('simstep').disabled=sim.unsupported;
  if((reset||sim.unsupported)&&['warm','temp'].includes(st.phase))drawTrend();
+ if(externalMode)renderExternal();
 }
 function advanceSim(minutes){
- if(!sim.active||st.phase!=='temp'||sim.unsupported||!Number.isFinite(minutes)||minutes<=0)return;
+ if(externalMode||!sim.active||st.phase!=='temp'||sim.unsupported||!Number.isFinite(minutes)||minutes<=0)return;
  // 수치 변화가 너무 갑작스럽게 보이지 않도록 모델 내부에서 작은 시간 단계로 누적.
  let remaining=Math.min(minutes,5);
  while(remaining>0){const dt=Math.min(.08,remaining);const r=calcResponse();sim.rcs=clamp(sim.rcs+(r.rate/60)*dt,10,220);sim.t+=dt;remaining-=dt;}
@@ -256,10 +265,11 @@ const scenarios={overview:{ic:'start',selected:'SI-652',region:'all',desc:'I/S �
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function norm(v){return v===null?'미확인':v===100?'OPEN':v===0?'CLOSE':v+'% (가상)';}
 function addLog(msg){st.logs.unshift({t:new Date().toLocaleTimeString('ko-KR',{hour12:false}),m:msg});st.logs=st.logs.slice(0,120);drawLog();}
-function setIC(k){st.ic=k;st.changed=false;st.dev={};st.jogCount={};st.lastJog={};st.lastDelta=null;st.hiddenJog={'SI-690':0};st.si690Unvalidated=false;st.jogPercent=Object.fromEntries([...percentJog].map(id=>[id,JOG_BASE]));devs.forEach(d=>st.dev[d.id]=Object.prototype.hasOwnProperty.call(snap[k].states,d.id)?snap[k].states[d.id]:null);$('flow').textContent=snap[k].flow.toLocaleString('ko-KR');$('tx').textContent=snap[k].x.toFixed(2);$('ty').textContent=snap[k].y.toFixed(2);$('rate').textContent='—';$('flowState').textContent='L/min · IC 관측값';$('flowState').classList.remove('warnflow');$('icstate').textContent='관측 IC';$('icdesc').textContent=scenarios[st.phase].desc;draw();}
+function setIC(k){invalidateExternal();st.ic=k;st.changed=false;st.dev={};st.jogCount={};st.lastJog={};st.lastDelta=null;st.hiddenJog={'SI-690':0};st.si690Unvalidated=false;st.jogPercent=Object.fromEntries([...percentJog].map(id=>[id,JOG_BASE]));devs.forEach(d=>st.dev[d.id]=Object.prototype.hasOwnProperty.call(snap[k].states,d.id)?snap[k].states[d.id]:null);$('flow').textContent=snap[k].flow.toLocaleString('ko-KR');$('tx').textContent=snap[k].x.toFixed(2);$('ty').textContent=snap[k].y.toFixed(2);$('rate').textContent='—';$('flowState').textContent='L/min · IC 관측값';$('flowState').classList.remove('warnflow');$('icstate').textContent='관측 IC';$('icdesc').textContent=scenarios[st.phase].desc;draw();}
 function selectDevice(id,{recenter=true}={}){if(!dv[id])return;resetInputDiagnostic();st.selected=id;$('devselect').value=id;drawDevice();drawSVG();if(recenter&&window.matchMedia('(max-width:720px)').matches){const d=dv[id],w=480,h=460;st.view={x:Math.max(0,Math.min(1700-w,d.x-w/2)),y:Math.max(0,Math.min(900-h,d.y-h/2)),w,h};updateView();}}
 function changeDev(cmd){
  const d=dv[st.selected];if(!d)return;
+ invalidateExternal();
  const before=st.dev[d.id];
  const beforeFlow=sim.active?{flow:sim.flow,bypassFlow:sim.bypassFlow,hxFlow:sim.hxFlow}:null;
  st.lastDelta=null;
@@ -341,7 +351,7 @@ function drawSVG(){
  ${pipe('M1402 416 H1412 V340 H1583')} ${pipe('M1412 416 V502 H1583')}
  ${pipe('M463 250 V126 H1434 V340','warm')}
  ${pipe('M808 416 V748 H120 V584','recir')}
- ${pumpRunning && !sim.unsupported ? (()=>{
+ ${!externalMode && pumpRunning && !sim.unsupported ? (()=>{
    const hot=['SI-652','SI-654','SI-656'].every(isOpen);
    const fromRWT=isOpen('SI-692');
    if(!hot&&!fromRWT)return '';
@@ -441,7 +451,7 @@ function activateScenario(key,{initial=false}={}){
 }
 $('simtoggle').onclick=()=>{if(!sim.active)return;sim.paused=!sim.paused;$('simtoggle').textContent=sim.paused?'▶ 재개':'Ⅱ 일시정지';sim.lastTime=performance.now();updateSimValues();};
 $('simstep').onclick=()=>{if(!sim.active)return;advanceSim(1);};
-window.setInterval(()=>{if(!sim.active||sim.paused)return;const now=performance.now(),elapsed=Math.min(1500,now-sim.lastTime);sim.lastTime=now;advanceSim(elapsed/1000*12/60);},500);
+window.setInterval(()=>{if(externalMode||!sim.active||sim.paused)return;const now=performance.now(),elapsed=Math.min(1500,now-sim.lastTime);sim.lastTime=now;advanceSim(elapsed/1000*12/60);},500);
 $('phase').onchange=e=>activateScenario(e.target.value);
 $('reset').onclick=()=>activateScenario(st.phase,{initial:true});
 $('regions').onclick=e=>{let b=e.target.closest('[data-region]');if(b)region(b.dataset.region);};$('zoomReset').onclick=()=>region('all');$('zoomIn').onclick=()=>zoom(.8);$('zoomOut').onclick=()=>zoom(1.25);
@@ -533,6 +543,39 @@ document.addEventListener('pointercancel',e=>{if(uiPress&&e.pointerId===uiPress.
 window.addEventListener('blur',cancelInputDiagnostic);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelInputDiagnostic();});
 document.addEventListener('click',e=>{if(e.detail===0&&inputButton(e.target))showInputDiagnostic('입력 점검: 키보드/보조기기 입력 · 시간 미측정');},true);
+let externalMode=false, externalFrame=null, displayRevision=0, displayTestActive=false;
+function syncDisplayTest(){ $('displayTestBanner').hidden=!displayTestActive; $('displayTest').setAttribute('aria-pressed',String(displayTestActive)); $('displayTest').textContent=displayTestActive?'미믹 표시 시험 종료':'미믹 표시 시험 시작'; }
+function connectorStatus(message){$('connectorStatus').textContent=message;$('modelRevision').textContent='화면 상태 버전 '+displayRevision;$('modelFile').disabled=!externalMode;}
+function invalidateExternal(){displayTestActive=false;syncDisplayTest();displayRevision++;externalFrame=null;$('modelFile').value='';connectorStatus(externalMode?'새 조작 상태 · 외부 응답 대기':'기존 가상 모형 · 미지원 운전 응답은 미산정');}
+function renderExternal(){
+ if(!externalMode)return;
+ $('flow').textContent=flowDisplay();$('flowState').textContent=externalFrame?'L/min · 외부 입력 데이터 (별도 검증 필요)':'L/min · 외부 응답 대기';$('flowState').classList.toggle('warnflow',!externalFrame);
+ $('tx').textContent='—';$('ty').textContent='—';$('txLabel').textContent='°C · 외부 온도 미연결';$('tyLabel').textContent='°C · 외부 온도 미연결';$('rate').textContent='—';$('trendpanel').hidden=true;$('simcontrols').hidden=true;
+ const num=$('svgFlowNum');if(num)num.textContent=flowDisplaySVG();const rate=$('svgRate');if(rate)rate.textContent='';
+ $('svg').querySelectorAll('.flow-overlay').forEach(n=>n.remove());
+ if(displayTestActive){
+  $('flow').textContent='8888';$('flowState').textContent='시험 숫자 · 실제 유량 아님';$('flowState').classList.add('warnflow');
+  if(num)num.textContent='8.88';
+  for(const path of $('svg').querySelectorAll('path.pipe')){const overlay=document.createElementNS('http://www.w3.org/2000/svg','path');overlay.setAttribute('d',path.getAttribute('d'));overlay.setAttribute('class','flow-overlay display-test-overlay');path.after(overlay);}
+  refreshReadouts();return;
+ }
+ if(externalFrame){const pipes=[...$('svg').querySelectorAll('path.pipe')];for(const i of externalFrame.segments){const path=pipes[i];if(!path)continue;const overlay=document.createElementNS('http://www.w3.org/2000/svg','path');overlay.setAttribute('d',path.getAttribute('d'));overlay.setAttribute('class','flow-overlay');path.after(overlay);}}
+ refreshReadouts();
+}
+function setExternalMode(on){externalMode=on;invalidateExternal();$('trendpanel').hidden=on||!['warm','temp'].includes(st.phase);$('simcontrols').hidden=on||st.phase!=='temp';if(!on&&['warm','temp'].includes(st.phase))drawTrend();draw();}
+function applyDisplayFrame(frame){
+ if(!externalMode)throw Error('외부 응답 모드를 먼저 선택하십시오.');
+ const count=$('svg').querySelectorAll('path.pipe').length;
+ if(!frame||frame.revision!==displayRevision||typeof frame.flow!=='number'||!Number.isFinite(frame.flow)||frame.flow<0||!Array.isArray(frame.segments)||frame.segments.some(i=>!Number.isInteger(i)||i<0||i>=count)||(frame.flow===0&&frame.segments.length))throw Error('응답 형식 또는 현재 상태 버전이 일치하지 않습니다.');
+ displayTestActive=false;syncDisplayTest();externalFrame={flow:frame.flow,segments:[...new Set(frame.segments)]};connectorStatus('외부 데이터 표시 중 · 응답 모델 검증은 별도');renderExternal();
+}
+window.SCSDisplay=Object.freeze({revision:()=>displayRevision,apply:applyDisplayFrame,clear:()=>{invalidateExternal();draw();}});
+$('displayTest').onclick=()=>{
+ if(displayTestActive){invalidateExternal();draw();return;}
+ setExternalMode(true);displayTestActive=true;syncDisplayTest();connectorStatus('화면 표시 시험 · 실제 계통 응답 아님');renderExternal();
+};
+$('connectModel').onclick=()=>setExternalMode(true);$('legacyModel').onclick=()=>setExternalMode(false);
+$('modelFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;displayTestActive=false;syncDisplayTest();try{applyDisplayFrame(JSON.parse(await file.text()));}catch(err){externalFrame=null;connectorStatus('불러오기 실패: '+err.message);renderExternal();}};
 activateScenario('overview',{initial:true});
 </script><script>
 (()=>{const el=id=>document.getElementById(id);const presets={empty:{source:'a',pump:false,valve:40},alternate:{source:'b',pump:false,valve:70},ready:{source:'a',pump:true,valve:60}};let s={...presets.empty};
