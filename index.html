@@ -151,7 +151,10 @@ const JOG_STEP=5, JOG_BASE=50;
 const HIDDEN_JOG_STEP=10; // SI-690 내부 가상 단계. MCR에는 %로 표시하지 않음.
 function hiddenJogLabel(){const v=st.hiddenJog['SI-690'];return v<=0?'전폐 (가상)':v>=100?'전개 (가상)':'중간 위치 (가상)';}
 // 위 단계값은 실제 밸브 동작속도나 개도계의 출력과 관계없음.
-const snap={start:{flow:0,x:31.54,y:30.71,hx:23.3,states:{'SI-034':0,'SI-692':100,'SI-652':0,'SI-654':0,'SI-656':0,'SI-694':0,'SI-696':0}},running:{flow:16030,x:147.61,y:142.09,hx:29.0,states:{'SI-034':100,'SI-692':0,'SI-668':0,'SI-652':100,'SI-654':100,'SI-656':100,'SI-694':100,'SI-696':100}}};
+const snap={
+ start:{flow:0,x:31.54,y:30.71,hx:23.3,states:{'SI-034':0,'SI-692':100,'SI-668':0,'SI-652':0,'SI-654':0,'SI-656':0,'SI-694':100,'SI-696':100}},
+ running:{flow:16030,x:147.61,y:142.09,hx:29.0,states:{'SI-034':100,'SI-692':0,'SI-668':0,'SI-652':100,'SI-654':100,'SI-656':100,'SI-694':100,'SI-696':100}}
+};
 let st={ic:'start',phase:'overview',dev:{},jogCount:{},jogPercent:{},hiddenJog:{'SI-690':0},si690Unvalidated:false,lastJog:{},lastDelta:null,selected:'SI-652',changed:false,logs:[],view:{x:0,y:0,w:1700,h:900},region:'all'};
 // 수치와 열수지는 교육용 근사. 16,030 L/min 및 초기 3개 온도는 제공 IC 사진값.
 // 밸브 유량계수, 실제 UA, RCS 열용량 및 펌프 특성은 확인되지 않았음.
@@ -162,38 +165,48 @@ let sim={active:false,paused:true,t:0,rcs:MODEL.baseTin,flow:MODEL.baseFlow,bypa
 function clamp(x,lo,hi){return Math.min(hi,Math.max(lo,x));}
 function isOpen(id){return st.dev[id]===100;}
 function calcResponse(){
- const pump=isOpen('SI-034'),suction=['SI-652','SI-654','SI-656'].every(isOpen);
+ const pump=isOpen('SI-034');
+ const fromHot=['SI-652','SI-654','SI-656'].every(isOpen);
+ const fromRWT=isOpen('SI-692');
+ const bypass=Math.max(0,(st.jogPercent['SI-306']??50)/100);
+ const hxCtrl=Math.max(0,(st.jogPercent['SI-658']??50)/100);
  const hxPath=isOpen('SI-694')&&isOpen('SI-696');
- const bypass=st.jogPercent['SI-306']??50,hx=st.jogPercent['SI-658']??50;
- const gB=Math.pow(bypass/50,1.2),gH=hxPath?HX_K*Math.pow(hx/50,1.2):0;
- const g=gB+gH,ref=1+HX_K;
- const ret=((st.jogPercent['SI-615']??50)+(st.jogPercent['SI-625']??50))/100;
- const hasReturn=ret>0.001;
+ const gBy=bypass;
+ const gHx=hxPath?hxCtrl:0;
+ const gOut=gBy+gHx;
+ const g615=Math.max(0,(st.jogPercent['SI-615']??50)/100);
+ const g625=Math.max(0,(st.jogPercent['SI-625']??50)/100);
+ const g690=0.85*Math.max(0,(st.hiddenJog['SI-690']??0)/100);
+ const gRet=g615+g625+g690;
  let reason='';
  if(!pump)reason='펌프 정지';
- else if(!suction)reason='RCS 흡입유로 차단';
- else if(!hasReturn)reason='RCS 복귀유로 차단';
- else if(g<0.0001)reason='열교환기·우회 유로 차단';
+ else if(!fromHot&&!fromRWT)reason='흡입원 차단';
+ else if(gOut<=0.001)reason='토출 유로 차단';
+ else if(gRet<=0.001)reason='복귀 유로 차단';
  const available=!reason;
- // Deliberately synthetic teaching sensitivity, not a pump/valve characteristic or measured response.
- const teachingGain=0.75+0.50*(hxPath?hx/100:0);
- const flow=available?clamp(MODEL.baseFlow*(.72+.28*Math.sqrt(g/ref))*(.94+.06*Math.sqrt(ret))*teachingGain,0,22000):0;
- const fraction=g>0?gH/g:0;
- const hxf=flow*fraction;
- const bypassFlow=available?Math.max(0,flow-hxf):0;
- // 열교환기 출구 온도: 가상의 지수효율식, 기준점에서 관측 IC와 일치시킴.
+ const conductance=Math.sqrt(Math.max(0,gOut)*Math.max(0,gRet));
+ const sourceFactor=fromHot&&fromRWT?1.02:(fromHot||fromRWT?1:0);
+ const flow=available?clamp(MODEL.baseFlow*(0.18+0.82*conductance)*sourceFactor,0,22000):0;
+ const hxFraction=gOut>0?gHx/gOut:0;
+ const warmFraction=gRet>0?g690/gRet:0;
+ const hxf=flow*hxFraction;
+ const bypassFlow=Math.max(0,flow-hxf);
  const refHXflow=MODEL.baseFlow*REF_HX_FRAC;
  const effectiveness=hxf>0?Math.exp(-Math.log((MODEL.baseTin-MODEL.ccw)/(MODEL.baseHX-MODEL.ccw))*refHXflow/hxf):1;
- const hxout=hxf>0?MODEL.ccw+(sim.rcs-MODEL.ccw)*effectiveness:null;
- const mix=hxf>0?sim.rcs-fraction*(sim.rcs-hxout):sim.rcs;
- const removed=available?(flow/MODEL.baseFlow)*Math.max(0,sim.rcs-mix)/(MODEL.baseTin-MODEL.baseMix):0;
- // 온도변화율: 실제 잔열·열용량·펌프 열수지가 아닌, 방향성을 보여주는 임시 가상모형.
- const rate=clamp((MODEL.heatIndex-MODEL.lossIndex*removed)*60,-21,7.2);
- if(isOpen('SI-692')||isOpen('SI-668'))reason=reason||'RWT 연결 상태 · 정지냉각 모델의 유효범위 밖';
- return {flow,bypassFlow,hxFlow:hxf,hxout,mix,rate,reason};
+ const hxout=hxf>0?MODEL.ccw+(sim.rcs-MODEL.ccw)*effectiveness:sim.rcs;
+ const mix=hxf>0?sim.rcs-hxFraction*(sim.rcs-hxout):sim.rcs;
+ let rate=0;
+ if(available&&st.phase==='temp'){
+   const removed=(flow/MODEL.baseFlow)*Math.max(0,sim.rcs-mix)/(MODEL.baseTin-MODEL.baseMix||1);
+   rate=clamp((MODEL.heatIndex-MODEL.lossIndex*removed)*60,-21,7.2);
+ }else if(available&&st.phase==='warm'){
+   // 교육용 단순 모델: SI-690이 열려 있을수록 예열이 완만하고, 닫힐수록 상승이 빨라짐.
+   rate=clamp(1.2+8.0*(1-warmFraction)+1.6*hxFraction,0.6,12);
+ }
+ return {flow,bypassFlow,hxFlow:hxf,hxout,mix,rate,reason,fromHot,fromRWT,hxFraction,warmFraction};
 }
 function startSim(){
- sim={active:true,paused:st.phase!=='temp',t:0,rcs:snap[st.ic].x,flow:snap[st.ic].flow,bypassFlow:0,hxFlow:0,hxout:MODEL.baseHX,mix:snap[st.ic].y,rate:-6,history:[],lastTime:performance.now(),reason:''};
+ sim={active:true,paused:!['warm','temp'].includes(st.phase),t:0,rcs:snap[st.ic].x,flow:snap[st.ic].flow,bypassFlow:0,hxFlow:0,hxout:MODEL.baseHX,mix:snap[st.ic].y,rate:0,history:[],lastTime:performance.now(),reason:''};
  updateSimValues(true);
  pushHistory();
 }
@@ -203,10 +216,10 @@ function responseReadoutHTML(){
  if(!sim.active)return '';
  if(displayTestActive)return '<div class="response-readout"><div><small>표시 시험</small><strong>8888</strong><small>시험 숫자 · 유량 아님</small></div></div>';
  if(externalMode)return '<div class="response-readout"><div><small>LPSI 01B 토출유량</small><strong>'+flowDisplay()+'</strong><small>L/min</small></div></div><div class="response-caption">'+(externalFrame?'외부 입력 데이터 · 별도 검증 필요':'외부 응답 대기')+'</div>';
- return '<div class="response-readout"><div><small>LPSI 01B 토출유량</small><strong>'+flowDisplay()+'</strong><small>L/min</small></div></div><div class="response-caption">'+(sim.unsupported?(st.phase==='warm'?'예열 응답 모델 미구현 · 미산정':st.si690Unvalidated?'SI-690 응답 모델 미검증 · 미산정':'기존 가상 모델의 범위 밖 · 미산정'):'교육용 가상 계산값 · 실측 보정 아님')+'</div>';
+ return '<div class="response-readout"><div><small>LPSI 01B 토출유량</small><strong>'+flowDisplay()+'</strong><small>L/min</small></div></div><div class="response-caption">'+(sim.reason?sim.reason+' · 교육용 가상 응답':'교육용 가상 계산값 · 실측 보정 아님')+'</div>';
 }
-function flowDisplay(){return externalMode?(externalFrame?Math.round(externalFrame.flow).toLocaleString('ko-KR'):'—'):sim.unsupported?'—':Math.round(sim.flow).toLocaleString('ko-KR');}
-function flowDisplaySVG(){return externalMode?(externalFrame?(externalFrame.flow/1000).toFixed(2):'—'):sim.unsupported?'—':(sim.flow/1000).toFixed(2);}
+function flowDisplay(){return externalMode?(externalFrame?Math.round(externalFrame.flow).toLocaleString('ko-KR'):'—'):Math.round(sim.flow).toLocaleString('ko-KR');}
+function flowDisplaySVG(){return externalMode?(externalFrame?(externalFrame.flow/1000).toFixed(2):'—'):(sim.flow/1000).toFixed(2);}
 
 function refreshReadouts(){
  for(const id of ['deviceReadout','modalReadout']){const el=$(id);if(!el)continue;const next=responseReadoutHTML();if(el.innerHTML!==next)el.innerHTML=next;}
@@ -214,31 +227,28 @@ function refreshReadouts(){
 function updateSimValues(reset=false){
  if(!sim.active)return;
  const r=calcResponse();
- sim.flow=r.flow;sim.bypassFlow=r.bypassFlow;sim.hxFlow=r.hxFlow;sim.mix=r.mix;sim.hxout=r.hxout;sim.rate=r.rate;sim.reason=r.reason;
- // Do not extrapolate the existing synthetic model into an unmodeled configuration.
- sim.unsupported=st.phase==='warm'||st.si690Unvalidated||(isOpen('SI-034')&&(isOpen('SI-692')||isOpen('SI-668')));
+ sim.flow=r.flow;sim.bypassFlow=r.bypassFlow;sim.hxFlow=r.hxFlow;sim.mix=r.mix;sim.hxout=r.hxout;sim.rate=r.rate;sim.reason=r.reason;sim.unsupported=false;
  $('flow').textContent=flowDisplay();
- $('flowState').textContent=sim.unsupported?(st.phase==='warm'?'L/min · 예열 모델 미구현':st.si690Unvalidated?'L/min · SI-690 응답 모델 미검증':'L/min · 기존 모형 범위 밖 (미산정)'):!isOpen('SI-034')?'L/min · 가상 정지':'L/min · 교육용 가상 계산값';
- $('flowState').classList.toggle('warnflow',sim.unsupported);
- const thermal=st.phase==='temp';
- $('txLabel').textContent=sim.unsupported?'°C · 미산정':thermal?'°C · HX 입구 측 (가상)':'°C · IC 관측값 (고정)';
- $('tyLabel').textContent=sim.unsupported?'°C · 미산정':thermal?'°C · 혼합 후 헤더 (가상)':'°C · IC 관측값 (고정)';
- $('tx').textContent=sim.unsupported?'—':thermal?sim.rcs.toFixed(2):snap[st.ic].x.toFixed(2);
- $('ty').textContent=sim.unsupported?'—':thermal?sim.mix.toFixed(2):snap[st.ic].y.toFixed(2);
- $('rate').textContent=thermal&&!sim.unsupported?(sim.rate>0?'+':'')+sim.rate.toFixed(1):'—';
+ $('flowState').textContent=!isOpen('SI-034')?'L/min · 펌프 정지':sim.reason?('L/min · '+sim.reason):'L/min · 교육용 가상 계산값';
+ $('flowState').classList.toggle('warnflow',!!sim.reason);
+ const thermal=['warm','temp'].includes(st.phase);
+ $('txLabel').textContent=thermal?'°C · HX 입구 측 (가상)':'°C · IC 관측값 (고정)';
+ $('tyLabel').textContent=thermal?'°C · 혼합 후 헤더 (가상)':'°C · IC 관측값 (고정)';
+ $('tx').textContent=thermal?sim.rcs.toFixed(2):snap[st.ic].x.toFixed(2);
+ $('ty').textContent=thermal?sim.mix.toFixed(2):snap[st.ic].y.toFixed(2);
+ $('rate').textContent=thermal?(sim.rate>0?'+':'')+sim.rate.toFixed(1):'—';
  $('rateCard').hidden=!thermal;
  $('simclock').textContent='가상 경과 '+String(Math.floor(sim.t/60)).padStart(2,'0')+':'+String(Math.floor(sim.t%60)).padStart(2,'0');
- $('icstate').textContent=sim.unsupported?(st.phase==='warm'?'예열 모델 미구현':st.si690Unvalidated?'SI-690 응답 미검증':'모형 범위 밖'):sim.paused?'일시정지':'계산 중';
+ $('icstate').textContent=sim.paused?'일시정지':(sim.reason||'계산 중');
  const flowSvg=$('svgFlowNum');if(flowSvg)flowSvg.textContent=flowDisplaySVG();
- const miniRate=$('svgRate');if(miniRate)miniRate.textContent=thermal&&!sim.unsupported?'RCS '+(sim.rate>0?'+':'')+sim.rate.toFixed(1)+'°C/h (가상)':'';
+ const miniRate=$('svgRate');if(miniRate)miniRate.textContent=thermal?'RCS '+(sim.rate>0?'+':'')+sim.rate.toFixed(1)+'°C/h (가상)':'';
  refreshReadouts();
- $('simtoggle').disabled=sim.unsupported; $('simstep').disabled=sim.unsupported;
- if((reset||sim.unsupported)&&['warm','temp'].includes(st.phase))drawTrend();
+ $('simtoggle').disabled=!thermal; $('simstep').disabled=!thermal;
+ if(reset&&thermal)drawTrend();
  if(externalMode)renderExternal();
 }
 function advanceSim(minutes){
- if(externalMode||!sim.active||st.phase!=='temp'||sim.unsupported||!Number.isFinite(minutes)||minutes<=0)return;
- // 수치 변화가 너무 갑작스럽게 보이지 않도록 모델 내부에서 작은 시간 단계로 누적.
+ if(externalMode||!sim.active||!['warm','temp'].includes(st.phase)||!Number.isFinite(minutes)||minutes<=0)return;
  let remaining=Math.min(minutes,5);
  while(remaining>0){const dt=Math.min(.08,remaining);const r=calcResponse();sim.rcs=clamp(sim.rcs+(r.rate/60)*dt,10,220);sim.t+=dt;remaining-=dt;}
  updateSimValues();pushHistory();drawTrend();
@@ -260,12 +270,18 @@ function drawTrend(){
  c.fillText(minX.toFixed(0)+'분',pad.l,h-5);c.fillText(maxX.toFixed(0)+'분',w-55,h-5);
  for(const [key,color] of [['rcs','#ce5675'],['mix','#308aa7']]){c.beginPath();c.strokeStyle=color;c.lineWidth=3;let started=false;pts.forEach(pt=>{if(pt.t<minX)return;if(!started){c.moveTo(x(pt.t),y(pt[key]));started=true}else c.lineTo(x(pt.t),y(pt[key]));});c.stroke();}
 }
-const topics={overview:['전체 유로','RCS H/L → LPSI → HX/우회 → RCS C/L'],boron:['붕소균일화운전','I/S 이전 관측 IC 준용 · 단계별 초기조건은 추가 확인 필요'],warm:['예열운전','예열용 초기조건 및 온도·유량 응답 모델 미검증. 기기 상태와 조작 기록만 표시합니다.'],temp:['냉각·가열률 제어','SCS 운전 IC · JOG 조작 → 유량·온도·변화율 연동 (교육용 근사)']};
-const scenarios={overview:{ic:'start',selected:'SI-652',region:'all',desc:'I/S 이전 IC · 펌프 정지'},boron:{ic:'start',selected:'SI-652',region:'suction',desc:'I/S 이전 IC 준용 · 단계별 IC 미확인'},warm:{ic:'start',selected:'SI-690',region:'return',desc:'예열 IC 미검증 · 모의 응답 미산정'},temp:{ic:'running',selected:'SI-306',region:'hx',desc:'SCS 운전 IC · LPSI 운전 · 16,030 L/min (사진값)'}};
+const topics={overview:['전체 유로','현재 열려 있는 흡입/토출/복귀 경로에 따라 유량과 흐름을 표시합니다.'],boron:['붕소균일화운전','IC는 초기조건만 설정하며 이후 조작은 공통 응답으로 표시합니다.'],warm:['예열운전','SI-690을 포함한 현재 밸브 배열에 따라 유량과 흐름을 표시합니다.'],temp:['냉각·가열률 제어','SCS 운전 IC · JOG 조작 → 유량·온도·변화율 연동 (교육용 근사)']};
+const scenarios={overview:{ic:'start',selected:'SI-652',region:'all',desc:'기본 IC · 펌프 정지 / RWT 흡입 대기'},boron:{ic:'start',selected:'SI-652',region:'suction',desc:'붕소균일화 IC · 공통 응답 표시'},warm:{ic:'start',selected:'SI-690',region:'return',desc:'예열 IC · SI-690 초기 전개'},temp:{ic:'running',selected:'SI-306',region:'hx',desc:'SCS 운전 IC · LPSI 운전 · 교육용 가상 응답'}};
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function norm(v){return v===null?'미확인':v===100?'OPEN':v===0?'CLOSE':v+'% (가상)';}
 function addLog(msg){st.logs.unshift({t:new Date().toLocaleTimeString('ko-KR',{hour12:false}),m:msg});st.logs=st.logs.slice(0,120);drawLog();}
-function setIC(k){invalidateExternal();st.ic=k;st.changed=false;st.dev={};st.jogCount={};st.lastJog={};st.lastDelta=null;st.hiddenJog={'SI-690':0};st.si690Unvalidated=false;st.jogPercent=Object.fromEntries([...percentJog].map(id=>[id,JOG_BASE]));devs.forEach(d=>st.dev[d.id]=Object.prototype.hasOwnProperty.call(snap[k].states,d.id)?snap[k].states[d.id]:null);$('flow').textContent=snap[k].flow.toLocaleString('ko-KR');$('tx').textContent=snap[k].x.toFixed(2);$('ty').textContent=snap[k].y.toFixed(2);$('rate').textContent='—';$('flowState').textContent='L/min · IC 관측값';$('flowState').classList.remove('warnflow');$('icstate').textContent='관측 IC';$('icdesc').textContent=scenarios[st.phase].desc;draw();}
+function setIC(k){
+ invalidateExternal();st.ic=k;st.changed=false;st.dev={};st.jogCount={};st.lastJog={};st.lastDelta=null;
+ st.hiddenJog={'SI-690':st.phase==='warm'?100:0};st.si690Unvalidated=false;
+ st.jogPercent=Object.fromEntries([...percentJog].map(id=>[id,JOG_BASE]));
+ devs.forEach(d=>st.dev[d.id]=Object.prototype.hasOwnProperty.call(snap[k].states,d.id)?snap[k].states[d.id]:null);
+ $('flow').textContent=snap[k].flow.toLocaleString('ko-KR');$('tx').textContent=snap[k].x.toFixed(2);$('ty').textContent=snap[k].y.toFixed(2);$('rate').textContent='—';$('flowState').textContent='L/min · 초기 상태';$('flowState').classList.remove('warnflow');$('icstate').textContent='관측 IC';$('icdesc').textContent=scenarios[st.phase].desc;draw();
+}
 function selectDevice(id,{recenter=true}={}){if(!dv[id])return;resetInputDiagnostic();st.selected=id;$('devselect').value=id;drawDevice();drawSVG();if(recenter&&window.matchMedia('(max-width:720px)').matches){const d=dv[id],w=480,h=460;st.view={x:Math.max(0,Math.min(1700-w,d.x-w/2)),y:Math.max(0,Math.min(900-h,d.y-h/2)),w,h};updateView();}}
 function changeDev(cmd){
  const d=dv[st.selected];if(!d)return;
@@ -286,7 +302,6 @@ function changeDev(cmd){
      const beforeHidden=hiddenJogLabel();
      const priorPosition=st.hiddenJog[d.id]??0;
      st.hiddenJog[d.id]=clamp((st.hiddenJog[d.id]??0)+(cmd==='open'?HIDDEN_JOG_STEP:-HIDDEN_JOG_STEP),0,100);
-     if(st.hiddenJog[d.id]!==priorPosition)st.si690Unvalidated=true;
      addLog(d.id+' JOG '+cmd.toUpperCase()+' : '+beforeHidden+' → '+hiddenJogLabel()+' (교육용 상태 · MCR % 미표시)');
    }else{
      addLog(d.id+' JOG '+cmd.toUpperCase());
@@ -351,24 +366,25 @@ function drawSVG(){
  ${pipe('M1402 416 H1412 V340 H1583')} ${pipe('M1412 416 V502 H1583')}
  ${pipe('M463 250 V126 H1434 V340','warm')}
  ${pipe('M808 416 V748 H120 V584','recir')}
- ${!externalMode && pumpRunning && !sim.unsupported ? (()=>{
+ ${!externalMode && pumpRunning && sim.flow>0 ? (()=>{
    const hot=['SI-652','SI-654','SI-656'].every(isOpen);
    const fromRWT=isOpen('SI-692');
-   if(!hot&&!fromRWT)return '';
    const hxOpen=isOpen('SI-694')&&isOpen('SI-696')&&(st.jogPercent['SI-658']??0)>0;
    const bypassOpen=(st.jogPercent['SI-306']??0)>0;
    const ret625=(st.jogPercent['SI-625']??0)>0;
    const ret615=(st.jogPercent['SI-615']??0)>0;
+   const warmOpen=(st.hiddenJog['SI-690']??0)>0;
    let segments='';
-   const motion=d=>`<path d="${d}" class="flow-overlay"/>`;
+   const motion=(d,extra='')=>`<path d="${d}" class="flow-overlay ${extra}"/>`;
    if(hot)segments+=motion('M195 250 H660 V416 H656');
    if(fromRWT)segments+=motion('M195 540 H658 V426');
-   if(hxOpen||bypassOpen){
+   if(hxOpen||bypassOpen||ret625||ret615||warmOpen){
      segments+=motion('M772 416 H880');
      if(bypassOpen)segments+=motion('M880 416 V306 H1402 V416');
      if(hxOpen)segments+=motion('M880 416 V564 H1402 V416');
-     if(ret625)segments+=`<path d="M1402 416 H1412 V340 H1583" class="flow-overlay return-flow"/>`;
-     if(ret615)segments+=`<path d="M1402 416 H1412 V502 H1583" class="flow-overlay return-flow"/>`;
+     if(ret625)segments+=motion('M1402 416 H1412 V340 H1583','return-flow');
+     if(ret615)segments+=motion('M1402 416 H1412 V502 H1583','return-flow');
+     if(warmOpen)segments+=motion('M463 250 V126 H1434 V340','warm-flow');
    }
    return segments;
  })() : ''}
@@ -435,10 +451,10 @@ let suppressTapUntil=0;
 $('svg').addEventListener('click',e=>{if(Date.now()<suppressTapUntil)return;let g=e.target.closest('[data-id]');if(g)openModal(g.dataset.id);});
 $('svg').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){let g=e.target.closest('[data-id]');if(g){e.preventDefault();openModal(g.dataset.id);}}});
 // UI-only provenance and reset status. Does not alter any valve preset or calculation.
-const icReviewLabels={overview:'기존 기본 화면 상태',boron:'기존 기본 화면 상태 준용 · 독립 IC 미검증',warm:'기존 기본 화면 상태 준용 · 예열 독립 IC 미검증',temp:'기존 관측 화면 상태 · 응답 모델 미검증'};
+const icReviewLabels={overview:'기본 화면 상태',boron:'기본 화면 상태 준용',warm:'예열 초기 상태 반영',temp:'운전 상태 관측값 기반'};
 function updateICReview(){
  $('icReviewTitle').textContent=topics[st.phase][0]+' · 초기 상태 정보';
- $('icReviewText').textContent=icReviewLabels[st.phase]+' / 현재 상황 초기화로 가상 조작 상태 복원 가능. 실제 절차서 배열 검증 아님.';
+ $('icReviewText').textContent=icReviewLabels[st.phase]+' / 현재 상황 초기화로 가상 조작 상태 복원 가능. 유량과 애니메이션은 교육용 가상 응답입니다.';
 }
 function setDemo(active){$('demoTrack').classList.toggle('playing',active);$('demoToggle').setAttribute('aria-pressed',String(active));$('demoToggle').textContent=active?'표시 효과 정지':'표시 효과 재생';}
 $('demoToggle').onclick=()=>setDemo($('demoToggle').getAttribute('aria-pressed')!=='true');
@@ -447,7 +463,7 @@ function activateScenario(key,{initial=false}={}){
  if(!initial&&st.changed&&!window.confirm('훈련 상황을 바꾸면 현재 가상 조작 상태가 초기화됩니다. 변경할까요?')){$('phase').value=st.phase;return;}
  if(!$('mimicModal').hidden)closeModal();resetInputDiagnostic();
  stopSim();setDemo(false);st.phase=key;st.selected=preset.selected;$('devselect').value=st.selected;setIC(preset.ic);drawTopic();updateICReview();
- startSim();$('simcontrols').hidden=key!=='temp';$('trendpanel').hidden=!['warm','temp'].includes(key);draw();region(preset.region);addLog((initial?'상황 초기화: ':'상황 선택: ')+topics[key][0]+' / '+preset.desc);
+ startSim();$('simcontrols').hidden=!['warm','temp'].includes(key);$('trendpanel').hidden=!['warm','temp'].includes(key);draw();region(preset.region);addLog((initial?'상황 초기화: ':'상황 선택: ')+topics[key][0]+' / '+preset.desc);
 }
 $('simtoggle').onclick=()=>{if(!sim.active)return;sim.paused=!sim.paused;$('simtoggle').textContent=sim.paused?'▶ 재개':'Ⅱ 일시정지';sim.lastTime=performance.now();updateSimValues();};
 $('simstep').onclick=()=>{if(!sim.active)return;advanceSim(1);};
@@ -562,7 +578,7 @@ function renderExternal(){
  if(externalFrame){const pipes=[...$('svg').querySelectorAll('path.pipe')];for(const i of externalFrame.segments){const path=pipes[i];if(!path)continue;const overlay=document.createElementNS('http://www.w3.org/2000/svg','path');overlay.setAttribute('d',path.getAttribute('d'));overlay.setAttribute('class','flow-overlay');path.after(overlay);}}
  refreshReadouts();
 }
-function setExternalMode(on){externalMode=on;invalidateExternal();$('trendpanel').hidden=on||!['warm','temp'].includes(st.phase);$('simcontrols').hidden=on||st.phase!=='temp';if(!on&&['warm','temp'].includes(st.phase))drawTrend();draw();}
+function setExternalMode(on){externalMode=on;invalidateExternal();$('trendpanel').hidden=on||!['warm','temp'].includes(st.phase);$('simcontrols').hidden=on||!['warm','temp'].includes(st.phase);if(!on&&['warm','temp'].includes(st.phase))drawTrend();draw();}
 function applyDisplayFrame(frame){
  if(!externalMode)throw Error('외부 응답 모드를 먼저 선택하십시오.');
  const count=$('svg').querySelectorAll('path.pipe').length;
